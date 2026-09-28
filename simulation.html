@@ -1,0 +1,915 @@
+<!DOCTYPE html>
+
+<html lang="id">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
+<title>Simulasi · Dobutamine Cardiovascular Control Simulator</title>
+<meta content="Simulator PID edukasional HFrEF + infus dobutamine dengan visualisasi 3D, model state-space, dan grafik hemodinamika." name="description"/>
+<link href="styles.css" rel="stylesheet"/>
+<link href="site.css" rel="stylesheet"/>
+<link href="simulation-theme.css" rel="stylesheet"/>
+<script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/"
+  }
+}
+</script>
+<script async="" id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-mml-chtml.js">
+</script>
+</head>
+<body class="simulator-page">
+<div aria-hidden="true" class="site-progress"></div>
+<nav aria-label="Navigasi utama" class="site-nav">
+<a
+  aria-label="Beranda Cardiovascular Simulator"
+  class="site-brand"
+  href="index.html"
+>
+  <img
+    src="assets/logobcs.png"
+    alt="Biomedical Cardiovascular Simulator"
+    class="site-brand-logo"
+  >
+</a>
+<button aria-expanded="false" aria-label="Buka navigasi" class="site-menu" type="button">☰</button>
+<div class="site-nav-links">
+<a class="" href="index.html">Beranda</a>
+<a class="" href="detail.html">Lihat Detail</a>
+<a class="active" href="simulation.html">Simulasi</a>
+<a class="site-nav-cta" href="simulation.html#simulator">Mulai Simulasi</a>
+</div>
+</nav>
+<section class="sim-intro"><div class="site-wrap sim-intro-grid"><div><div class="site-kicker">Ruang kerja interaktif</div><h2>Jalankan loop kontrol kardiovaskular secara real time.</h2><p>Ubah target pengendali, batas dosis, dan kondisi pump, kemudian amati dampaknya dari dosis perintah menuju dosis aktual, konsentrasi plasma, exposure, dan hemodinamika.</p></div><div class="sim-pills"><div class="sim-pill"><strong>Closed-loop</strong><span>PID menyesuaikan perintah berdasarkan error CO.</span></div><div class="sim-pill"><strong>Open-loop</strong><span>Anda mengatur dosis secara langsung sebagai pembanding.</span></div><div class="sim-pill"><strong>Failure aktuator</strong><span>α mengubah dosis yang benar-benar diberikan pump.</span></div><div class="sim-pill"><strong>3D + grafik</strong><span>Visualisasikan gerakan jantung dan kurva respons.</span></div></div></div></section>
+<div id="simulator"></div>
+<header class="topbar reveal is-visible">
+<div>
+<h1>Simulator Kontrol Infusion Pump: Sistem Kardiovaskular</h1>
+</div>
+<span class="status-pill" id="runStatus">DIJEDA</span>
+</header>
+<main class="layout reveal is-visible">
+<aside class="panel controls">
+<h2>Kontrol simulasi</h2>
+<label>Mode evaluasi
+        <select id="controlMode">
+<option selected="" value="pid">Closed-loop PID (otomatis)</option>
+<option value="manual">Open-loop dosis manual (pembanding)</option>
+</select>
+</label>
+<div class="mode-help" id="modeHelp"></div>
+<label>Target CO <span id="targetCoValue">4.00 L/min</span>
+<input id="targetCo" max="4.30" min="3.10" step="0.05" type="range" value="4.00"/>
+</label>
+<label>Dosis manual <span id="manualDoseValue">2.50 µg/kg/min</span>
+<input id="manualDose" max="5" min="0" step="0.1" type="range" value="2.5"/>
+</label>
+<div class="control-grid">
+<label>Kp
+          <input id="kp" max="20" min="0" step="0.1" type="number" value="5.0"/>
+</label>
+<label>Ki
+          <input id="ki" max="10" min="0" step="0.05" type="number" value="0.8"/>
+</label>
+<label>Kd
+          <input id="kd" max="10" min="0" step="0.05" type="number" value="0.0"/>
+</label>
+</div>
+<div class="dose-bounds-grid">
+<label>Dosis minimum <span id="minDoseValue">0.0 µg/kg/min</span>
+<input id="minDose" max="2" min="0" step="0.1" type="range" value="0"/>
+</label>
+<label>Dosis maksimum <span id="maxDoseValue">5.0 µg/kg/min</span>
+<input id="maxDose" max="5" min="1" step="0.5" type="range" value="5"/>
+</label>
+</div>
+<label>Kondisi pump
+        <select id="failureMode">
+<option selected="" value="normal">Normal pemberian (100%)</option>
+<option value="partial">Partial pemberian (50%)</option>
+<option value="occlusion">Occlusion / tidak ada pemberian</option>
+<option value="overpemberian">Failure over-pemberian (150%)</option>
+</select>
+</label>
+<label>Kecepatan simulasi <span id="speedValue">20×</span>
+<input id="simSpeed" max="60" min="1" step="1" type="range" value="20"/>
+</label>
+<div class="button-row">
+<button class="primary" id="startBtn">Mulai</button>
+<button id="resetBtn">Reset</button>
+</div>
+<div class="note">
+<strong>Ruang lingkup:</strong> model HFrEF edukasional. Exposure dobutamine mengubah kontraktilitas ventrikel dan menghasilkan respons HR ringan yang dibatasi. Denyut jantung 3D menggunakan HR, kekuatan kontraksi menggunakan Ees, dan animasi aliran darah menggunakan CO.
+      </div>
+<div class="control-evaluation">
+<div class="evaluation-head">
+<span>EVALUASI KONTROL</span>
+<strong id="evalStatus">TRACKING</strong>
+</div>
+<div class="evaluation-grid">
+<div><span>Error CO</span><strong id="evalError">—</strong></div>
+<div><span>Puncak CO</span><strong id="evalPeak">—</strong></div>
+<div><span>Overshoot</span><strong id="evalOvershoot">—</strong></div>
+<div><span>Settling time</span><strong id="evalSettling">—</strong></div>
+<div><span>Batas dosis</span><strong id="evalDoseRange">—</strong></div>
+<div><span>Rentang CO tercapai</span><strong id="evalReachable">—</strong></div>
+</div>
+</div>
+</aside>
+<section class="center-stack">
+<section class="panel visual-panel">
+<div class="panel-heading">
+<div>
+<p class="eyebrow">VISUALISASI 3D</p>
+<h2>Pompa jantung</h2>
+</div>
+<span class="small-muted">Drag untuk memutar · scroll untuk zoom</span>
+</div>
+<div id="threeContainer"></div>
+<div class="visual-legend">
+<span><i class="dot lv"></i> Ventrikel kiri</span>
+<span><i class="dot rv"></i> Ventrikel kanan</span>
+<span><i class="dot flow"></i> Aliran aorta</span>
+</div>
+</section>
+<section class="panel chart-panel">
+<div class="panel-heading">
+<div>
+<p class="eyebrow">RESPONS DINAMIS</p>
+<h2>Respons kontrol</h2>
+</div>
+<span class="small-muted">Target CO, dosis perintah, dosis aktual</span>
+</div>
+<div id="responseChart"></div>
+</section>
+<section class="panel ecg-panel">
+<div class="panel-heading">
+<div>
+<p class="eyebrow">AKTIVITAS LISTRIK JANTUNG</p>
+<h2>ECG sintetis · P–QRS–T</h2>
+</div>
+<span class="small-muted"><strong id="ecgHR">75 bpm</strong> · gelombang edukasional</span>
+</div>
+<div id="ecgChart"></div>
+<div class="ecg-note">Gelombang P–QRS–T dibuat dari HR hasil simulasi hanya untuk visualisasi; grafik ini bukan model ECG diagnostik.</div>
+</section>
+</section>
+<aside class="panel metrics-panel">
+<h2>Hemodinamika</h2>
+<div class="metric-grid">
+<article class="metric"><span>Denyut jantung</span><strong id="mHR">75</strong><small>bpm</small></article>
+<article class="metric"><span>Tekanan darah</span><strong id="mBP">--/--</strong><small>mmHg</small></article>
+<article class="metric"><span>MAP</span><strong id="mMAP">--</strong><small>mmHg</small></article>
+<article class="metric"><span>Curah jantung</span><strong id="mCO">--</strong><small>L/min</small></article>
+<article class="metric"><span>Volume sekuncup</span><strong id="mSV">--</strong><small>mL/beat</small></article>
+<article class="metric"><span>Fraksi ejeksi</span><strong id="mEF">--</strong><small>%</small></article>
+</div>
+<h2 class="section-gap">Obat / aktuator</h2>
+<div class="metric-grid compact">
+<article class="metric"><span>Dosis perintah</span><strong id="mDoseCmd">--</strong><small>µg/kg/min</small></article>
+<article class="metric"><span>Dosis aktual</span><strong id="mDoseActual">--</strong><small>µg/kg/min</small></article>
+<article class="metric"><span>Cp plasma</span><strong id="mCp">--</strong><small>µg/L</small></article>
+<article class="metric"><span>Exposure z</span><strong id="mZ">--</strong><small>referensi = 1.00</small></article>
+<article class="metric"><span>Ees</span><strong id="mEes">--</strong><small>mmHg/mL</small></article>
+</div>
+<div class="alarm" id="alarmBox">Sistem siap.</div>
+</aside>
+</main>
+<section class="model-tabs-section reveal">
+<!-- ===================================================== -->
+<!-- DOBUTAMINE / INFUSION PUMP INFORMATION -->
+<!-- Lebar mengikuti CENTER COLUMN dari simulator -->
+<!-- ===================================================== -->
+<div class="info-center-row">
+<section class="drug-info-section">
+<!-- RADIO CONTROL - HIDDEN -->
+<input checked="" class="drug-info-radio" id="drugInfoDobutamine" name="drug-info-tab" type="radio"/>
+<input class="drug-info-radio" id="drugInfoPump" name="drug-info-tab" type="radio"/>
+<!-- TAB BUTTONS -->
+<div class="drug-info-tabs">
+<label class="drug-info-tab" for="drugInfoDobutamine">
+        1
+      </label>
+<label class="drug-info-tab" for="drugInfoPump">
+        2
+      </label>
+</div>
+<!-- CONTENT CARD -->
+<div class="drug-info-card">
+<!-- ================================================= -->
+<!-- PAGE 1 - DOBUTAMINE -->
+<!-- ================================================= -->
+<div class="drug-info-panel dobutamine-info">
+<div class="drug-info-image">
+<img alt="Struktur kimia Dobutamine" src="./assets/dobutamine-structure.png"/>
+</div>
+<div class="drug-info-content">
+<p class="eyebrow">
+            OBAT
+          </p>
+<h2>
+            Dobutamine
+          </h2>
+<p class="drug-info-description">
+            Dobutamine merupakan obat inotropik yang digunakan
+            untuk meningkatkan kemampuan kontraksi jantung.
+            Pada simulator ini, dobutamine diberikan melalui
+            infusion pump dan dimodelkan sebagai input farmakologis
+            yang memengaruhi respons sistem kardiovaskular.
+          </p>
+<div class="drug-info-points">
+<div class="drug-info-point">
+<span>01</span>
+<div>
+<strong>Fungsi utama</strong>
+<p>
+                  Meningkatkan kontraktilitas ventrikel
+                  sehingga stroke volume dan cardiac output
+                  dapat meningkat.
+                </p>
+</div>
+</div>
+<div class="drug-info-point">
+<span>02</span>
+<div>
+<strong>Parameter model</strong>
+<p>
+                  Efek obat terutama direpresentasikan melalui
+                  perubahan end-systolic elastance
+                  (<em>Ees</em>).
+                </p>
+</div>
+</div>
+<div class="drug-info-point">
+<span>03</span>
+<div>
+<strong>Pemberian obat</strong>
+<p>
+                  Dobutamine diberikan secara kontinu melalui
+                  infusion pump dengan laju dalam
+                  µg/kg/min.
+                </p>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- ================================================= -->
+<!-- PAGE 2 - INFUSION PUMP -->
+<!-- ================================================= -->
+<div class="drug-info-panel pump-info">
+<div class="drug-info-image pump-image">
+<img alt="Infusion Pump" src="./assets/infusion-pump.jpg"/>
+</div>
+<div class="drug-info-content">
+<p class="eyebrow">
+            AKTUATOR
+          </p>
+<h2>
+            Infusion Pump
+          </h2>
+<p class="drug-info-description">
+            Infusion pump berfungsi sebagai aktuator pada sistem
+            kontrol. Perangkat ini menerima perintah dosis dari
+            pengendali dan memberikan dobutamine dengan laju
+            infus yang terkontrol.
+          </p>
+<div class="drug-info-points">
+<div class="drug-info-point">
+<span>01</span>
+<div>
+<strong>Dosis perintah</strong>
+<p>
+                  Nilai laju infus yang diminta oleh pengendali PID.
+                </p>
+</div>
+</div>
+<div class="drug-info-point">
+<span>02</span>
+<div>
+<strong>Dosis aktual</strong>
+<p>
+                  Laju infus aktual yang diberikan oleh pump
+                  setelah memperhitungkan dinamika aktuator.
+                </p>
+</div>
+</div>
+<div class="drug-info-point">
+<span>03</span>
+<div>
+<strong>Simulasi failure</strong>
+<p>
+                  Simulator dapat merepresentasikan normal pemberian,
+                  partial pemberian, occlusion, dan over-pemberian 150%.
+                </p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+</div>
+<!-- =====================================================
+       MODEL TABS
+       ===================================================== -->
+<div class="model-tabs">
+<button class="model-tab active" data-tab="heart">
+<span class="tab-number">01</span>
+<span class="tab-text">
+<strong>Model Jantung Manusia</strong>
+<small>Mekanika jantung</small>
+</span>
+</button>
+<button class="model-tab" data-tab="drug">
+<span class="tab-number">02</span>
+<span class="tab-text">
+<strong>Model Obat</strong>
+<small>Infusion pump + PK/PD</small>
+</span>
+</button>
+<button class="model-tab" data-tab="control">
+<span class="tab-number">03</span>
+<span class="tab-text">
+<strong>Teknik Kontrol</strong>
+<small>State-space + kontrol PID</small>
+</span>
+</button>
+</div>
+<!-- =====================================================
+       MODEL CONTENT
+       ===================================================== -->
+<div class="model-tab-content">
+<!-- ===================================================
+         TAB 01 — HUMAN HEART MODEL
+         =================================================== -->
+<div class="model-panel active" id="tab-heart">
+<div class="hme-column">
+<div class="hme-head">
+<span class="hme-index">1</span>
+<div>
+<p class="hme-eyebrow">PENJELASAN MODEL</p>
+<h2 class="hme-title">Model jantung manusia</h2>
+</div>
+</div>
+<p class="hme-desc">
+          Simulator merepresentasikan pompa ventrikel kiri manusia dan cardiac output sistemik menggunakan lumped-parameter model. Efek dobutamine direpresentasikan melalui kontraktilitas ventrikel, beban arteri, dan volume pengisian.
+        </p>
+<div class="hme-equations">
+<div class="hme-equation">
+<span class="hme-equation-label">
+              Arterial coupling
+            </span>
+<div class="hme-formula">
+              \[
+              ESV =
+              \dfrac{
+                E_a \cdot EDV + E_{es} \cdot V_0
+              }{
+                E_a + E_{es}
+              }
+              \]
+            </div>
+</div>
+<div class="hme-equation">
+<span class="hme-equation-label">
+              Volume sekuncup
+            </span>
+<div class="hme-formula">
+              \[
+              SV = EDV - ESV
+              \]
+            </div>
+</div>
+<div class="hme-equation">
+<span class="hme-equation-label">
+              Fraksi ejeksi
+            </span>
+<div class="hme-formula">
+              \[
+              EF =
+              \dfrac{100 \cdot SV}{EDV}
+              \]
+            </div>
+</div>
+<div class="hme-equation">
+<span class="hme-equation-label">
+              Curah jantung
+            </span>
+<div class="hme-formula">
+              \[
+              CO =
+              \dfrac{HR \cdot SV}{1000}
+              \]
+            </div>
+</div>
+</div>
+<div class="hme-stats">
+<div class="hme-stat">
+<span>EDV</span>
+<strong>173</strong>
+<small>mL</small>
+</div>
+<div class="hme-stat">
+<span>SV</span>
+<strong>40.6</strong>
+<small>mL/beat</small>
+</div>
+<div class="hme-stat">
+<span>EF</span>
+<strong>23.7</strong>
+<small>%</small>
+</div>
+<div class="hme-stat">
+<span>CO</span>
+<strong>3.04</strong>
+<small>L/min</small>
+</div>
+</div>
+<p class="hme-note">
+  Nilai baseline merepresentasikan model ventrikel kiri dewasa yang terinspirasi HFrEF/DCM. BP/MAP merupakan estimasi untuk tampilan yang diturunkan dari pendekatan sederhana resistansi/compliance sistemik; keduanya bukan target pengendali.
+        </p>
+</div>
+</div>
+<!-- ===================================================
+         TAB 02 — DRUG MODEL
+         =================================================== -->
+<div class="model-panel" id="tab-drug">
+<div class="model-column">
+<p class="eyebrow">MODEL OBAT</p>
+<h2>2. Infusion pump + PK/PD Dobutamine</h2>
+<div class="equations">
+<div>
+<span>Dinamika pump</span>
+<div class="formula">
+              \[
+              \frac{du_a}{dt}
+              =
+              \frac{\alpha u_{cmd}-u_a}
+              {\tau_{pump}}
+              \]
+            </div>
+</div>
+<div>
+<span>Faktor pemberian pump</span>
+<div class="formula">
+              \[
+              \alpha =
+              \begin{cases}
+              1.00 &amp; \text{normal} \\
+              0.50 &amp; \text{partial pemberian} \\
+              0.00 &amp; \text{occlusion} \\
+              1.50 &amp; \text{over-pemberian failure}
+              \end{cases}
+              \]
+            </div>
+</div>
+<div>
+<span>PK satu kompartemen</span>
+<div class="formula">
+              \[
+              \frac{dC_p}{dt}
+              =
+              \frac{u_a}{V_d}
+              -
+              k_e C_p
+              \]
+            </div>
+</div>
+<div>
+<span>Eliminasi</span>
+<div class="formula">
+              \[
+              k_e
+              =
+              \frac{\ln(2)}
+              {t_{1/2}}
+              \]
+            </div>
+</div>
+<div>
+<span>Paparan ternormalisasi</span>
+<div class="formula">
+              \[
+              z
+              =
+              \frac{C_p}{C_{ss,5}}
+              \]
+            </div>
+</div>
+<div>
+<span>Kontraktilitas</span>
+<div class="formula">
+              \[
+              E_{es}
+              =
+              E_{es,0}(1+0.41z)
+              \]
+            </div>
+</div>
+<div>
+<span>Arterial load</span>
+<div class="formula">
+              \[
+              E_a
+              =
+              E_{a,0}(1-0.23z)
+              \]
+            </div>
+</div>
+<div>
+<span>Volume pengisian</span>
+<div class="formula">
+              \[
+              EDV
+              =
+              EDV_0(1-0.04z)
+              \]
+            </div>
+</div>
+</div>
+<p class="small-muted">
+          z = 1.00 berarti exposure referensi yang berhubungan dengan kondisi referensi 5 µg/kg/min; nilai ini bukan ambang toksisitas klinis. Persamaan respons jantung dibatasi hingga z = 1.50 untuk membatasi ekstrapolasi. Over-pemberian (150%) hanya dimasukkan sebagai skenario failure aktuator untuk evaluasi sistem kontrol.
+        </p>
+</div>
+</div>
+<!-- ===================================================
+         TAB 03 — CONTROL ENGINEERING
+         =================================================== -->
+<div class="model-panel" id="tab-control">
+<div class="model-column control-engineering-card">
+<!-- HEADER -->
+<div class="control-header">
+<div>
+<p class="eyebrow">
+              TEKNIK KONTROL
+            </p>
+<h2>
+              3. State-Space + Kontrol PID
+            </h2>
+<p class="control-description">
+              Sistem kontrol closed-loop mengatur cardiac output dengan menyesuaikan laju infus dobutamine melalui infusion pump.
+            </p>
+</div>
+<div class="closed-loop-badge">
+<span class="pulse-dot"></span>
+            CLOSED LOOP
+          </div>
+</div>
+<!-- CONTROL ARCHITECTURE -->
+<div class="control-architecture">
+<div class="architecture-node reference">
+<span class="node-label">REFERENSI</span>
+<strong>CO<sub>target</sub></strong>
+<small>L/min</small>
+</div>
+<div class="architecture-arrow">→</div>
+<div class="architecture-node summing">
+<span class="sigma">Σ</span>
+<small>error</small>
+</div>
+<div class="architecture-arrow">→</div>
+<div class="architecture-node pengendali">
+<span class="node-label">PENGENDALI</span>
+<strong>PID</strong>
+<small>K<sub>p</sub> · K<sub>i</sub> · K<sub>d</sub></small>
+</div>
+<div class="architecture-arrow">→</div>
+<div class="architecture-node actuator">
+<span class="node-label">AKTUATOR</span>
+<strong>Infusion Pump</strong>
+<small>µg/kg/min</small>
+</div>
+<div class="architecture-arrow">→</div>
+<div class="architecture-node plant">
+<span class="node-label">PLANT</span>
+<strong>Jantung + PK/PD</strong>
+<small>Output CO</small>
+</div>
+</div>
+<!-- FEEDBACK -->
+<div class="feedback-line">
+<span class="feedback-arrow">↩</span>
+<span>Feedback Cardiac Output</span>
+<span class="feedback-line-end"></span>
+</div>
+<!-- STATE SPACE + PID -->
+<div class="control-grid-main">
+<!-- STATE SPACE -->
+<div class="control-subcard">
+<div class="subcard-header">
+<div>
+<span class="section-number">01</span>
+<div>
+<h3>Model State-Space</h3>
+<p>Linearisasi lokal di sekitar baseline HFrEF</p>
+</div>
+</div>
+<span class="unit-badge">
+                t : min
+              </span>
+</div>
+<div class="state-definition">
+<span class="formula-label">
+                VEKTOR STATE
+              </span>
+<div class="state-vector">
+<span>x</span>
+<span>=</span>
+<span>[</span>
+<strong>z</strong>
+<span>,</span>
+<strong>u<sub>actual</sub></strong>
+<span>]</span>
+<sup>T</sup>
+</div>
+<div class="state-items">
+<div>
+<span class="state-symbol">z</span>
+<span>Normalized drug exposure</span>
+</div>
+<div>
+<span class="state-symbol">
+                    u<sub>actual</sub>
+</span>
+<span>Laju infus yang diberikan</span>
+</div>
+</div>
+</div>
+<div class="matrix-section">
+<div class="matrix-block">
+<span class="matrix-label">
+                  MATRIKS SISTEM
+                </span>
+<div class="matrix-layout">
+<span class="matrix-name">A</span>
+<div class="matrix">
+<span id="a11">−0.2925</span>
+<span id="a12">0.0585</span>
+<span id="a21">0.0000</span>
+<span id="a22">−20.0000</span>
+</div>
+</div>
+</div>
+<div class="matrix-block">
+<span class="matrix-label">
+                  MATRIKS INPUT
+                </span>
+<div class="matrix-layout">
+<span class="matrix-name">B</span>
+<div class="matrix vertical">
+<span id="b11">0.0000</span>
+<span id="b21">20.0000</span>
+</div>
+</div>
+</div>
+<div class="matrix-block">
+<span class="matrix-label">
+                  MATRIKS OUTPUT
+                </span>
+<div class="matrix-layout">
+<span class="matrix-name">C</span>
+<div class="matrix horizontal">
+<span id="c11">1.2718</span>
+<span id="c12">0.0000</span>
+</div>
+</div>
+</div>
+<div class="matrix-block">
+<span class="matrix-label">
+                  DIRECT TERM
+                </span>
+<div class="matrix-layout">
+<span class="matrix-name">D</span>
+<div class="matrix horizontal">
+<span id="d11">0</span>
+</div>
+</div>
+</div>
+</div>
+<div class="state-equation">
+<div class="equation-row">
+<span class="equation-tag">STATE</span>
+<div>
+<strong>ẋ = Ax + Bu</strong>
+</div>
+</div>
+<div class="equation-row">
+<span class="equation-tag">OUTPUT</span>
+<div>
+<strong>ΔCO = Cx + Du</strong>
+</div>
+</div>
+</div>
+</div>
+<!-- PID -->
+<div class="control-subcard">
+<div class="subcard-header">
+<div>
+<span class="section-number">02</span>
+<div>
+<h3>Pengendali PID</h3>
+<p>Regulasi feedback cardiac output</p>
+</div>
+</div>
+<span class="unit-badge">
+                Default PI
+              </span>
+</div>
+<div class="pid-equation-card">
+<span class="formula-label">
+                HUKUM KONTROL
+              </span>
+<div class="pid-equation">
+
+                u<sub>cmd</sub>(t)
+                =
+                K<sub>p</sub>e(t)
+                +
+                K<sub>i</sub>∫e(t)dt
+                +
+                K<sub>d</sub>
+<span class="fraction">
+                  de(t)
+                  <span></span>
+                  dt
+                </span>
+</div>
+<div class="error-equation">
+
+                e(t)
+                =
+                CO<sub>target</sub>
+                −
+                CO<sub>measured</sub>
+</div>
+</div>
+<!-- PID PARAMETERS -->
+<div class="pid-parameters">
+<div class="pid-parameter kp">
+<span>K<sub>p</sub></span>
+<strong id="displayKp">5.00</strong>
+<small>Proportional</small>
+</div>
+<div class="pid-parameter ki">
+<span>K<sub>i</sub></span>
+<strong id="displayKi">0.80</strong>
+<small>Integral</small>
+</div>
+<div class="pid-parameter kd">
+<span>K<sub>d</sub></span>
+<strong id="displayKd">0.00</strong>
+<small>Derivative</small>
+</div>
+</div>
+<!-- CONTROL FLOW -->
+<div class="pid-flow">
+<div class="flow-item">
+<span>01</span>
+<strong>Pengukuran</strong>
+<small>CO aktual</small>
+</div>
+<div class="flow-arrow">→</div>
+<div class="flow-item">
+<span>02</span>
+<strong>Perbandingan</strong>
+<small>Error</small>
+</div>
+<div class="flow-arrow">→</div>
+<div class="flow-item">
+<span>03</span>
+<strong>Kontrol</strong>
+<small>Perintah dosis</small>
+</div>
+</div>
+<!-- PENGENDALI STATUS -->
+<div class="pengendali-status">
+<div>
+<span class="status-label">
+                  LOCAL DC GAIN
+                </span>
+<strong id="displayDCGain">
+                  0.254
+                </strong>
+<small>
+                  L/min per µg/kg/min
+                </small>
+</div>
+<div>
+<span class="status-label">
+                  LAJU ELIMINASI
+                </span>
+<strong id="displayKe">
+                  0.292
+                </strong>
+<small>
+                  min⁻¹
+                </small>
+</div>
+<div>
+<span class="status-label">
+                  Css REFERENSI
+                </span>
+<strong id="displayCss">
+                  84.6
+                </strong>
+<small>
+                  µg/L
+                </small>
+</div>
+</div>
+</div>
+</div>
+<!-- INTERPRETATION -->
+<div class="control-interpretation">
+<div class="interpretation-icon">
+            i
+          </div>
+<div>
+<strong>
+              Cara kerja pengendali
+            </strong>
+<p>
+              Pengendali terus membandingkan cardiac output terukur dengan target yang diinginkan. Ketika CO berada di bawah target, PID meningkatkan perintah infus. Konsentrasi dobutamine kemudian meningkat, kontraktilitas ventrikel bertambah, dan cardiac output ikut meningkat.
+            </p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<section class="sim-demo-guide reveal" id="failure-guide"><div class="sim-demo-inner"><div class="sim-demo-head"><h2>Panduan demonstrasi failure</h2><p>Gunakan perintah pengendali yang sama, kemudian ubah hanya kondisi pump. Perbedaan antara perintah dan pemberian membuat lokasi failure terlihat sebelum menjelaskan respons fisiologis downstream.</p></div><div class="sim-demo-grid"><article class="sim-demo-card"><span>01 · NORMAL</span><h3>100% pemberian</h3><p>Dosis perintah dan dosis aktual akan menuju nilai yang sama setelah transien pump yang singkat.</p></article><article class="sim-demo-card"><span>02 · PARTIAL</span><h3>50% pemberian</h3><p>Pengendali dapat meningkatkan perintah, tetapi pemberian aktual tetap dikurangi oleh α = 0.5.</p></article><article class="sim-demo-card"><span>03 · OCCLUSION</span><h3>Tidak ada pemberian</h3><p>Dosis aktual menuju nol, Cp menurun, dan exposure kembali menuju baseline.</p></article><article class="sim-demo-card"><span>04 · OVER-DELIVERY</span><h3>150% pemberian</h3><p>Delivery aktual melebihi perintah sehingga Cp dan z dapat meningkat di atas kondisi referensi.</p></article></div><div class="sim-live-flow"><b>u perintah</b><i></i><b>u actual</b><i></i><b>Cp</b><i></i><b>z</b><i></i><b>Ees / SV</b><i></i><b>CO</b></div></div></section>
+<section class="references">
+<h2>Dasar ilmiah</h2>
+<ol>
+<li>Bozkurt S. Mathematical modeling of cardiac function to evaluate clinical cases in adults and children. <em>PLoS ONE</em>. 2019;14(10):e0224663.</li>
+<li>Ishizaka S, Asanoi H, Kameyama T, Sasayama S. Effect of dobutamine on ventriculo-arterial coupling and ventricular work efficiency in patients with cardiac failure. <em>J Cardiol</em>. 1988;18(2):457–465.</li>
+<li>Kates RE, Leier CV. Dobutamine pharmacokinetics in severe heart failure. <em>Clin Pharmacol Ther</em>. 1978;24(5):537–541.</li>
+</ol>
+<p><strong>Hanya untuk penggunaan edukasional.</strong> Ini bukan kalkulator dosis, rekomendasi terapi, maupun sistem pendukung keputusan klinis.</p>
+</section>
+<footer class="site-footer">
+  <div class="site-wrap">
+    <div class="site-footer-grid">
+      <div>
+        <a class="footer-brand" href="index.html">
+          <img
+            src="assets/logobcs.png"
+            alt="Biomedical Cardiovascular Simulator"
+            class="footer-logo"
+          >
+        </a>
+        <p>
+          Simulator sistem kontrol edukasional untuk HFrEF + infus dobutamine.
+          Bukan kalkulator dosis klinis maupun rekomendasi terapi.
+        </p>
+      </div>
+
+      <div class="site-footer-links">
+        <a href="detail.html">Teori</a>
+        <a href="simulation.html">Simulasi</a>
+        <a href="detail.html#references">Referensi</a>
+      </div>
+    </div>
+
+    <div class="site-copyright">
+      Teknik Biomedis · Universitas Gadjah Mada · Website tiga halaman berbasis scroll
+    </div>
+  </div>
+</footer>
+<script>
+  document.querySelectorAll('.model-tab').forEach(tab => {
+
+    tab.addEventListener('click', () => {
+
+      const target = tab.dataset.tab;
+
+      document.querySelectorAll('.model-tab').forEach(item => {
+        item.classList.remove('active');
+      });
+
+      document.querySelectorAll('.model-panel').forEach(panel => {
+        panel.classList.remove('active');
+      });
+
+      tab.classList.add('active');
+
+      document
+        .getElementById(`tab-${target}`)
+        .classList.add('active');
+
+    });
+
+  });
+</script>
+<!-- ===================================================== -->
+<!-- MAIN SIMULATOR -->
+<!-- WAJIB: menjalankan model.js + visual3d.js melalui app.js -->
+<!-- ===================================================== -->
+<script src="./src/app.js" type="module"></script>
+<script src="site.js"></script>
+</body>
+</html>

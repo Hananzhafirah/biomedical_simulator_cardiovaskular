@@ -1,0 +1,509 @@
+/* =========================================================
+   SIMULATION PAGE — DARK PURPLE VISUAL SYSTEM
+   Matches the Home / Detail pages while preserving all simulator logic.
+   ========================================================= */
+
+body.simulator-page{
+  --bg:#090014;
+  --paper:rgba(24,8,49,.78);
+  --ink:#fbf8ff;
+  --muted:#b9a7d0;
+  --line:rgba(255,255,255,.12);
+  --accent:#9b4de3;
+  --accent-dark:#6c28b9;
+  --secondary:#4fd7ff;
+  --ok:#64dfb1;
+  --warn:#f3b55d;
+  --danger:#ff6b7b;
+  --shadow:0 24px 70px rgba(4,0,15,.34);
+
+  min-height:100%;
+  background:
+    radial-gradient(circle at 9% 9%,rgba(105,38,189,.23),transparent 30rem),
+    radial-gradient(circle at 88% 24%,rgba(225,76,154,.11),transparent 28rem),
+    radial-gradient(circle at 52% 88%,rgba(79,215,255,.06),transparent 34rem),
+    linear-gradient(180deg,#130027 0%,#090014 44%,#100021 100%);
+  color:var(--ink);
+}
+
+body.simulator-page::before{
+  content:"";
+  position:fixed;
+  inset:74px 0 auto 0;
+  height:320px;
+  pointer-events:none;
+  background:linear-gradient(180deg,rgba(107,40,185,.10),transparent);
+  z-index:-1;
+}
+
+body.simulator-page h1,
+body.simulator-page h2,
+body.simulator-page h3,
+body.simulator-page strong{color:var(--ink)}
+
+body.simulator-page .site-nav{
+  background:rgba(14,0,31,.86);
+  border-color:rgba(255,255,255,.10);
+  box-shadow:0 14px 42px rgba(4,0,15,.16);
+}
+
+/* -------------------- Intro -------------------- */
+body.simulator-page .sim-intro{
+  position:relative;
+  overflow:hidden;
+  padding:58px 0 50px;
+  background:
+    radial-gradient(circle at 78% 20%,rgba(225,76,154,.16),transparent 18rem),
+    radial-gradient(circle at 20% 0%,rgba(79,215,255,.10),transparent 20rem),
+    linear-gradient(135deg,#170031,#2b0757 58%,#130025);
+}
+body.simulator-page .sim-intro::after{
+  content:"";
+  position:absolute;
+  width:310px;height:310px;
+  right:-90px;bottom:-210px;
+  border:1px solid rgba(255,255,255,.10);
+  border-radius:50%;
+  box-shadow:0 0 0 42px rgba(255,255,255,.018),0 0 0 88px rgba(255,255,255,.012);
+  animation:simOrbit 16s linear infinite;
+}
+body.simulator-page .sim-intro h2{max-width:760px}
+body.simulator-page .sim-pill{
+  position:relative;
+  overflow:hidden;
+  border-color:rgba(255,255,255,.13);
+  background:linear-gradient(145deg,rgba(255,255,255,.085),rgba(255,255,255,.035));
+  box-shadow:0 18px 36px rgba(0,0,0,.12);
+  transition:transform .2s ease,border-color .2s ease,background .2s ease;
+}
+body.simulator-page .sim-pill:hover{
+  transform:translateY(-3px);
+  border-color:rgba(79,215,255,.30);
+  background:linear-gradient(145deg,rgba(79,215,255,.09),rgba(225,76,154,.05));
+}
+body.simulator-page .sim-pill::before{
+  content:"";
+  position:absolute;left:0;top:0;bottom:0;width:2px;
+  background:linear-gradient(#4fd7ff,#e14c9a);
+}
+
+/* -------------------- Main simulator title -------------------- */
+body.simulator-page .topbar{
+  position:sticky;
+  top:74px;
+  padding:24px 34px 19px;
+  border-bottom:1px solid rgba(255,255,255,.10);
+  background:rgba(12,1,28,.88);
+  backdrop-filter:blur(18px);
+  box-shadow:0 18px 46px rgba(4,0,15,.22);
+}
+body.simulator-page .topbar h1{
+  color:white;
+  font-size:clamp(1.4rem,2.55vw,2.15rem);
+}
+body.simulator-page .status-pill{
+  color:#d9caed;
+  border-color:rgba(255,255,255,.14);
+  background:rgba(255,255,255,.055);
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.018);
+}
+body.simulator-page .status-pill.running{
+  color:#85efc6;
+  border-color:rgba(100,223,177,.35);
+  background:rgba(100,223,177,.08);
+  animation:statusGlow 1.6s ease-in-out infinite;
+}
+
+/* -------------------- Workspace -------------------- */
+body.simulator-page .layout{
+  width:min(1540px,100%);
+  margin:0 auto;
+  gap:18px;
+  padding:22px 22px 24px;
+}
+body.simulator-page .panel{
+  position:relative;
+  border:1px solid rgba(255,255,255,.12);
+  background:linear-gradient(145deg,rgba(31,10,62,.82),rgba(15,4,34,.74));
+  box-shadow:0 22px 62px rgba(0,0,0,.20);
+  backdrop-filter:blur(16px);
+  overflow:hidden;
+}
+body.simulator-page .panel::before{
+  content:"";
+  position:absolute;
+  inset:0 0 auto 0;
+  height:2px;
+  background:linear-gradient(90deg,rgba(79,215,255,.78),rgba(155,77,227,.78),rgba(225,76,154,.64));
+  opacity:.7;
+  pointer-events:none;
+}
+body.simulator-page .controls,
+body.simulator-page .metrics-panel{
+  padding:20px;
+  top:180px;
+}
+body.simulator-page .controls > h2,
+body.simulator-page .metrics-panel > h2{
+  font-size:1.05rem;
+  margin:4px 0 18px;
+}
+body.simulator-page .center-stack{gap:18px}
+
+/* Controls */
+body.simulator-page label{
+  color:#b8a7cd;
+  font-weight:700;
+}
+body.simulator-page label > span{color:#fff}
+body.simulator-page input[type="number"],
+body.simulator-page select{
+  border-color:rgba(255,255,255,.12);
+  background:rgba(255,255,255,.065);
+  color:#fff;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.035);
+}
+body.simulator-page select option{background:#16042d;color:#fff}
+body.simulator-page input[type="number"]:focus,
+body.simulator-page select:focus{
+  border-color:rgba(79,215,255,.62);
+  box-shadow:0 0 0 3px rgba(79,215,255,.08);
+}
+body.simulator-page input[type="range"]{accent-color:#a855f7}
+body.simulator-page button{
+  border-color:rgba(255,255,255,.14);
+  background:rgba(255,255,255,.065);
+  color:#f9f5ff;
+}
+body.simulator-page button:hover{
+  border-color:rgba(79,215,255,.34);
+  background:rgba(255,255,255,.095);
+}
+body.simulator-page button.primary{
+  border-color:transparent;
+  background:linear-gradient(90deg,#6d28c9,#b62b90);
+  color:white;
+  box-shadow:0 12px 28px rgba(112,35,184,.26);
+}
+body.simulator-page .mode-help{
+  border-left-color:#4fd7ff;
+  background:rgba(79,215,255,.065);
+  color:#b8a7cd;
+}
+body.simulator-page .mode-help strong{color:#eafaff}
+body.simulator-page .note{
+  border:1px solid rgba(255,255,255,.08);
+  background:rgba(255,255,255,.035);
+  color:#b9a7d0;
+}
+body.simulator-page .control-evaluation{
+  border-color:rgba(255,255,255,.10);
+  background:rgba(255,255,255,.035);
+}
+body.simulator-page .evaluation-head > span,
+body.simulator-page .evaluation-grid span{color:#9e8ab8}
+body.simulator-page .evaluation-head > strong{
+  background:rgba(100,223,177,.09);
+  color:#84efc5;
+}
+body.simulator-page .evaluation-grid > div{border-color:rgba(255,255,255,.07)}
+body.simulator-page .evaluation-grid strong{color:white}
+
+/* Headings */
+body.simulator-page .panel-heading{padding:20px 20px 0}
+body.simulator-page .panel-heading h2{font-size:1.04rem;color:white}
+body.simulator-page .eyebrow{color:#79e7ff}
+body.simulator-page .small-muted{color:#a995c0}
+
+/* 3D stage */
+body.simulator-page #threeContainer{
+  height:460px;
+  margin-top:12px;
+  background:
+    radial-gradient(circle at 50% 42%,rgba(122,47,210,.17),transparent 34%),
+    radial-gradient(circle at 50% 50%,#16042f,#080012 76%);
+}
+body.simulator-page .visual-legend{color:#a995c0}
+body.simulator-page .dot.lv{background:#ff6578;box-shadow:0 0 10px rgba(255,101,120,.55)}
+body.simulator-page .dot.rv{background:#50d6ff;box-shadow:0 0 10px rgba(80,214,255,.5)}
+body.simulator-page .dot.flow{background:#d478ff;box-shadow:0 0 10px rgba(212,120,255,.45)}
+
+/* Metrics */
+body.simulator-page .metric-grid{gap:9px}
+body.simulator-page .metric{
+  position:relative;
+  border-color:rgba(255,255,255,.105);
+  background:linear-gradient(145deg,rgba(255,255,255,.065),rgba(255,255,255,.026));
+  border-radius:14px;
+  padding:13px;
+  transition:transform .18s ease,border-color .18s ease,background .18s ease;
+}
+body.simulator-page .metric:hover{
+  transform:translateY(-2px);
+  border-color:rgba(79,215,255,.26);
+  background:linear-gradient(145deg,rgba(79,215,255,.07),rgba(225,76,154,.035));
+}
+body.simulator-page .metric span{color:#9f8bb9}
+body.simulator-page .metric strong{color:#fff}
+body.simulator-page .metric small{color:#9987af}
+body.simulator-page .alarm{
+  border:1px solid rgba(100,223,177,.16);
+  background:rgba(100,223,177,.07);
+  color:#81e8bf;
+}
+body.simulator-page .alarm.warn{
+  border-color:rgba(243,181,93,.18);
+  background:rgba(243,181,93,.075);
+  color:#f3c378;
+}
+body.simulator-page .alarm.danger{
+  border-color:rgba(255,107,123,.22);
+  background:rgba(255,107,123,.075);
+  color:#ff8a98;
+}
+
+/* Plotly containers */
+body.simulator-page #responseChart,
+body.simulator-page #ecgChart{filter:drop-shadow(0 16px 34px rgba(0,0,0,.06))}
+body.simulator-page .ecg-note{
+  border-left-color:rgba(79,215,255,.32);
+  color:#a995c0;
+}
+
+/* -------------------- Drug / pump information -------------------- */
+body.simulator-page .model-tabs-section{
+  padding:34px 22px 26px;
+  background:linear-gradient(180deg,rgba(255,255,255,.008),rgba(50,12,87,.09));
+}
+body.simulator-page .info-center-row{width:min(1540px,100%);margin:0 auto;padding-inline:22px}
+body.simulator-page .drug-info-tab{
+  border-color:rgba(255,255,255,.12);
+  background:rgba(255,255,255,.055);
+  color:#d9caed;
+  box-shadow:none;
+}
+body.simulator-page #drugInfoDobutamine:checked~.drug-info-tabs label[for="drugInfoDobutamine"],
+body.simulator-page #drugInfoPump:checked~.drug-info-tabs label[for="drugInfoPump"]{
+  background:linear-gradient(135deg,#6d28c9,#b62b90);
+  border-color:transparent;
+}
+body.simulator-page .drug-info-card{
+  border-color:rgba(255,255,255,.12);
+  background:linear-gradient(145deg,rgba(31,10,62,.82),rgba(15,4,34,.74));
+  box-shadow:0 22px 60px rgba(0,0,0,.18);
+}
+body.simulator-page .drug-info-card::before{background:linear-gradient(90deg,#4fd7ff,#a855f7,#e14c9a)}
+body.simulator-page .drug-info-image{
+  min-height:168px;
+  border:1px solid rgba(255,255,255,.08);
+  border-radius:18px;
+  background:rgba(255,255,255,.94);
+}
+body.simulator-page .drug-info-content h2,
+body.simulator-page .drug-info-point strong{color:white}
+body.simulator-page .drug-info-description,
+body.simulator-page .drug-info-point p{color:#b6a5ca}
+body.simulator-page .drug-info-point{border-color:rgba(255,255,255,.08)}
+body.simulator-page .drug-info-point > span{
+  border-color:rgba(79,215,255,.24);
+  color:#82e8ff;
+  background:rgba(79,215,255,.055);
+}
+
+/* -------------------- Theory / model tabs -------------------- */
+body.simulator-page .model-tabs{width:min(1400px,100%)}
+body.simulator-page .model-tab{
+  border-color:rgba(255,255,255,.11);
+  background:rgba(255,255,255,.045);
+  color:#efe7f7;
+  box-shadow:none;
+}
+body.simulator-page .model-tab:hover{
+  border-color:rgba(79,215,255,.3);
+  background:rgba(255,255,255,.07);
+}
+body.simulator-page .model-tab.active{
+  border-color:rgba(79,215,255,.32);
+  background:linear-gradient(145deg,rgba(105,40,190,.24),rgba(225,76,154,.08));
+  box-shadow:0 15px 40px rgba(0,0,0,.12);
+}
+body.simulator-page .model-tab small{color:#a895bf}
+body.simulator-page .tab-number{
+  border-color:rgba(79,215,255,.22);
+  color:#7fe5ff;
+}
+body.simulator-page .hme-column,
+body.simulator-page .model-column,
+body.simulator-page .control-engineering-card{
+  border-color:rgba(255,255,255,.11);
+  background:linear-gradient(145deg,rgba(31,10,62,.82),rgba(15,4,34,.74));
+  box-shadow:0 22px 60px rgba(0,0,0,.17);
+  color:#efe8f7;
+}
+body.simulator-page .hme-column::before,
+body.simulator-page .drug-model-card::before,
+body.simulator-page .control-engineering-card::before{
+  background:linear-gradient(90deg,#4fd7ff,#9b4de3,#e14c9a);
+}
+body.simulator-page .hme-title,
+body.simulator-page .hme-desc,
+body.simulator-page .formula,
+body.simulator-page .equations span,
+body.simulator-page .hme-formula{color:#f8f4ff}
+body.simulator-page .hme-note,
+body.simulator-page .model-column > p,
+body.simulator-page .hme-equation-label{color:#a995c0}
+body.simulator-page .hme-equation{border-color:rgba(255,255,255,.08)}
+body.simulator-page .hme-stat{
+  border-color:rgba(255,255,255,.10);
+  background:rgba(255,255,255,.035);
+}
+body.simulator-page .hme-stat span,
+body.simulator-page .hme-stat small{color:#9f8bb9}
+
+/* Control engineering card */
+body.simulator-page .control-description{color:#b3a1c8}
+body.simulator-page .closed-loop-badge{
+  border-color:rgba(100,223,177,.25);
+  background:rgba(100,223,177,.07);
+  color:#83eac2;
+}
+body.simulator-page .control-architecture{
+  border-color:rgba(255,255,255,.10);
+  background:rgba(0,0,0,.12);
+}
+body.simulator-page .architecture-node,
+body.simulator-page .control-subcard,
+body.simulator-page .state-definition,
+body.simulator-page .matrix-block,
+body.simulator-page .equation-row,
+body.simulator-page .pid-equation-card,
+body.simulator-page .pid-parameter,
+body.simulator-page .flow-item,
+body.simulator-page .pengendali-status > div{
+  border-color:rgba(255,255,255,.095)!important;
+  background:rgba(255,255,255,.035)!important;
+  color:#f8f4ff;
+  box-shadow:none;
+}
+body.simulator-page .architecture-node .node-label,
+body.simulator-page .architecture-node small,
+body.simulator-page .subcard-header p,
+body.simulator-page .state-items > div,
+body.simulator-page .formula-label,
+body.simulator-page .matrix-label,
+body.simulator-page .status-label,
+body.simulator-page .equation-tag,
+body.simulator-page .pid-parameter small,
+body.simulator-page .flow-item small{color:#9d8aB5}
+body.simulator-page .section-number,
+body.simulator-page .unit-badge,
+body.simulator-page .state-symbol{
+  border-color:rgba(255,255,255,.08);
+  background:rgba(255,255,255,.055);
+  color:#85e9ff;
+}
+body.simulator-page .state-vector,
+body.simulator-page .matrix span,
+body.simulator-page .equation-row strong,
+body.simulator-page .pid-equation,
+body.simulator-page .error-equation,
+body.simulator-page .pid-parameter strong,
+body.simulator-page .flow-item strong{color:#f8f4ff}
+body.simulator-page .state-vector strong,
+body.simulator-page .matrix-name{color:#a96aff}
+body.simulator-page .matrix::before,
+body.simulator-page .matrix::after{border-color:#8875a0}
+body.simulator-page .architecture-arrow,
+body.simulator-page .flow-arrow{color:#806d99}
+body.simulator-page .feedback-line{color:#9785ad}
+body.simulator-page .control-interpretation{
+  border-color:rgba(79,215,255,.13);
+  background:rgba(79,215,255,.045);
+}
+body.simulator-page .control-interpretation p{color:#b3a1c8}
+body.simulator-page .interpretation-icon{
+  background:rgba(79,215,255,.09);
+  color:#84e9ff;
+  border-color:rgba(79,215,255,.20);
+}
+
+/* -------------------- Failure guide -------------------- */
+body.simulator-page .sim-demo-guide{
+  position:relative;
+  padding:78px 22px;
+  background:
+    radial-gradient(circle at 86% 12%,rgba(225,76,154,.09),transparent 25rem),
+    linear-gradient(180deg,#0c001a,#130027 64%,#090014);
+  color:white;
+  border-top:1px solid rgba(255,255,255,.08);
+}
+body.simulator-page .sim-demo-head h2{color:white}
+body.simulator-page .sim-demo-head p{color:#b9a7d0}
+body.simulator-page .sim-demo-card{
+  border-color:rgba(255,255,255,.11);
+  background:linear-gradient(145deg,rgba(255,255,255,.065),rgba(255,255,255,.028));
+  color:white;
+  box-shadow:0 18px 44px rgba(0,0,0,.16);
+  transition:transform .2s ease,border-color .2s ease;
+}
+body.simulator-page .sim-demo-card:hover{
+  transform:translateY(-4px);
+  border-color:rgba(79,215,255,.26);
+}
+body.simulator-page .sim-demo-card span{color:#84e8ff}
+body.simulator-page .sim-demo-card p{color:#ad9bc3}
+body.simulator-page .sim-live-flow b{
+  border-color:rgba(255,255,255,.10);
+  background:rgba(255,255,255,.05);
+  color:#f4eeff;
+}
+body.simulator-page .sim-live-flow i{background:linear-gradient(90deg,#4fd7ff,#e14c9a)}
+body.simulator-page .sim-live-flow i::after{background:#fff;box-shadow:0 0 12px #4fd7ff}
+
+/* -------------------- References and footer -------------------- */
+body.simulator-page .references{
+  width:min(1400px,calc(100% - 44px));
+  margin:28px auto 0;
+  border-color:rgba(255,255,255,.10);
+  background:rgba(255,255,255,.045);
+  color:#c4b4d8;
+  box-shadow:0 18px 44px rgba(0,0,0,.12);
+}
+body.simulator-page .references h2{color:white}
+body.simulator-page footer{
+  border-top:1px solid rgba(255,255,255,.08);
+  color:#827092;
+  background:#090014;
+}
+
+/* -------------------- Responsive -------------------- */
+@media(max-width:1100px){
+  body.simulator-page .layout{grid-template-columns:270px minmax(0,1fr)}
+  body.simulator-page .metrics-panel{position:static;grid-column:1/-1}
+  body.simulator-page .info-center-row{grid-template-columns:270px minmax(0,1fr)}
+}
+@media(max-width:760px){
+  body.simulator-page .layout{grid-template-columns:1fr;padding:14px}
+  body.simulator-page .controls,
+  body.simulator-page .metrics-panel{position:static;top:auto}
+  body.simulator-page .controls{order:1}
+  body.simulator-page .center-stack{order:2}
+  body.simulator-page .metrics-panel{order:3}
+  body.simulator-page .metric-grid{grid-template-columns:repeat(2,1fr)}
+  body.simulator-page #threeContainer{height:390px}
+  body.simulator-page .topbar{padding:20px 18px 16px}
+  body.simulator-page .status-pill{position:static;display:inline-block;margin-top:10px}
+  body.simulator-page .info-center-row{grid-template-columns:1fr;padding-inline:14px}
+  body.simulator-page .drug-info-section{grid-column:1}
+  body.simulator-page .model-tabs{grid-template-columns:1fr}
+  body.simulator-page .control-grid-main{grid-template-columns:1fr}
+  body.simulator-page .control-architecture{grid-template-columns:1fr}
+  body.simulator-page .architecture-arrow{transform:rotate(90deg);text-align:center}
+}
+
+@keyframes statusGlow{
+  0%,100%{box-shadow:0 0 0 0 rgba(100,223,177,0)}
+  50%{box-shadow:0 0 0 6px rgba(100,223,177,.06),0 0 20px rgba(100,223,177,.08)}
+}
+@keyframes simOrbit{to{transform:rotate(360deg)}}

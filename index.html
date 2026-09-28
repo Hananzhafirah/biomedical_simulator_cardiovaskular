@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+
+<html lang="id"><head><meta charset="utf-8"/><meta content="width=device-width,initial-scale=1" name="viewport"/>
+<title>Biomedical Cardiovascular Simulator</title>
+<meta content="Website edukasional scrollable untuk simulator kontrol kardiovaskular dengan infusion pump dobutamine." name="description"/>
+<link href="site.css" rel="stylesheet"/><script defer="" src="site.js"></script></head>
+<body class="site-page home-page"><div aria-hidden="true" class="site-progress"></div>
+<nav aria-label="Navigasi utama" class="site-nav">
+<a
+  aria-label="Beranda Cardiovascular Simulator"
+  class="site-brand"
+  href="index.html"
+>
+  <img
+    src="assets/logobcs.png"
+    alt="Biomedical Cardiovascular Simulator"
+    class="site-brand-logo"
+  >
+</a>
+<button aria-expanded="false" aria-label="Buka navigasi" class="site-menu" type="button">☰</button>
+<div class="site-nav-links">
+<a class="active" href="index.html">Beranda</a>
+<a class="" href="detail.html">Lihat Detail</a>
+<a class="" href="simulation.html">Simulasi</a>
+<a class="site-nav-cta" href="simulation.html#simulator">Mulai Simulasi</a>
+</div>
+</nav>
+<main>
+<section class="hero"><div class="site-wrap hero-grid">
+<div class="hero-copy reveal is-visible"><div class="site-kicker">Kontrol biomedis closed-loop</div>
+<h1 class="site-title">Simulator kardiovaskular yang memungkinkan Anda <em>melihat loop kontrol bekerja secara dinamis.</em></h1>
+<p class="site-lead">Pelajari bagaimana pengendali PID mengatur infusion pump dobutamine, bagaimana konsentrasi obat berubah melalui model farmakokinetik satu kompartemen, serta bagaimana sistem kardiovaskular merespons melalui kontraktilitas, stroke volume, ejection fraction, dan cardiac output.</p>
+<div class="hero-actions"><a class="site-btn primary" href="simulation.html#simulator">Mulai simulasi <span>→</span></a><a class="site-btn secondary" href="detail.html">Lihat detail model</a></div>
+<div class="hero-meta"><span><i></i>Baseline edukasional HFrEF</span><span><i></i>PID + PK/PD + jantung 3D</span><span><i></i>Demonstrasi mode failure</span></div>
+</div>
+<div class="hero-visual reveal" data-delay="1"><div class="hero-orbit"></div><div class="hero-orbit"></div>
+<div class="heart-card"><div class="heart-illustration"><svg aria-label="Ilustrasi anatomi jantung bergaya" role="img" viewbox="0 0 240 260">
+<defs><lineargradient id="hg" x1="0" x2="1" y1="0" y2="1"><stop offset="0" stop-color="#ff6678"></stop><stop offset=".55" stop-color="#d33265"></stop><stop offset="1" stop-color="#7f1c70"></stop></lineargradient><lineargradient id="bg" x1="0" x2="1"><stop stop-color="#55d6ff"></stop><stop offset="1" stop-color="#3567c9"></stop></lineargradient></defs>
+<path d="M112 61C87 32 46 44 35 78c-12 38 12 78 38 106 16 18 31 31 47 55 17-25 34-38 52-58 29-31 47-72 31-106-14-30-50-40-75-13-5 6-10 13-16 22-5-9-7-16 0-23Z" fill="url(#hg)"></path>
+<path d="M124 73c15-30 11-47 1-63h19c14 22 14 44 2 69" fill="#bd355e"></path>
+<path d="M93 69c-3-33-15-49-28-59l-10 16c13 11 20 25 20 51" fill="url(#bg)"></path>
+<path d="M145 63c25-18 47-17 66-12l-5 19c-20-5-36-1-53 10" fill="#c63759"></path>
+<path d="M79 83c-24-16-41-16-57-10l7 18c15-5 29-2 45 10" fill="#3ea9de"></path>
+<path d="M116 84c-16 22-19 48-12 75 4 16 12 30 16 49" fill="none" opacity=".75" stroke="#ffb6c3" stroke-linecap="round" stroke-width="4"></path>
+<path d="M90 101c-16 22-17 43-9 64" fill="none" opacity=".75" stroke="#9ddfff" stroke-linecap="round" stroke-width="3"></path>
+<circle cx="83" cy="121" fill="#55d6ff" r="5"></circle><circle cx="154" cy="126" fill="#ff9aae" r="5"></circle>
+</svg></div><div class="ecg-strip"><svg preserveaspectratio="none" viewbox="0 0 900 90"><polyline points="0,48 85,48 115,45 135,48 185,48 205,58 220,18 236,74 255,47 320,47 345,39 370,47 440,48 525,48 555,45 575,48 625,48 645,58 660,18 676,74 695,47 760,47 785,39 810,47 900,48"></polyline></svg></div></div>
+<div class="floating-chip chip-a"><strong>CO</strong> umpan balik</div><div class="floating-chip chip-b"><strong>Cp</strong> state obat</div><div class="floating-chip chip-c"><strong>z</strong> paparan ternormalisasi</div>
+</div>
+</div></section>
+<section class="site-section compact"><div class="site-wrap"><div class="stats-strip reveal">
+<div class="stat"><strong data-count="75" data-suffix=" bpm">0</strong><span>Denyut jantung baseline pada model edukasional saat ini</span></div>
+<div class="stat"><strong data-count="3.05" data-decimals="2" data-suffix=" L/min">0</strong><span>Perkiraan cardiac output baseline dari HR × SV</span></div>
+<div class="stat"><strong data-count="5" data-suffix=" µg/kg/min">0</strong><span>Infus dobutamine referensi yang digunakan untuk paparan ternormalisasi</span></div>
+<div class="stat"><strong data-count="1.5" data-decimals="1" data-suffix="×">0</strong><span>Faktor failure over-pemberian yang tersedia pada simulator</span></div>
+</div></div></section>
+<section class="site-section" id="flow"><div class="site-wrap"><div class="reveal"><div class="site-kicker">Satu rantai kausal yang berkesinambungan</div><h2 class="site-section-title">Dari target cardiac output hingga perubahan denyut jantung.</h2><p class="site-lead">Website disusun mengikuti urutan kausal yang sama dengan simulator. Setiap blok memiliki fungsi tersendiri sehingga lokasi aksi kontrol, failure aktuator, dan respons kardiovaskular dapat terlihat dengan jelas.</p></div>
+<div class="chain reveal" data-delay="1"><div class="chain-node"><strong>Target CO</strong><small>curah jantung (CO) yang diinginkan</small></div><div class="chain-arrow">→</div><div class="chain-node"><strong>PID</strong><small>menghitung perintah dosis</small></div><div class="chain-arrow">→</div><div class="chain-node"><strong>Infusion pump</strong><small>aktuator + faktor failure α</small></div><div class="chain-arrow">→</div><div class="chain-node"><strong>PK dobutamine</strong><small>menghasilkan Cp plasma</small></div><div class="chain-arrow">→</div><div class="chain-node"><strong>Exposure z</strong><small>Cp dinormalisasi terhadap Css,ref</small></div><div class="chain-arrow">→</div><div class="chain-node"><strong>Model jantung</strong><small>Ees, Ea, EDV → SV, EF</small></div><div class="chain-arrow">→</div><div class="chain-node"><strong>Umpan balik CO</strong><small>kembali ke pengendali</small></div></div>
+</div></section>
+<section class="site-section"><div class="site-wrap feature-band"><div class="reveal"><div class="site-kicker">Mengapa website ini</div><h2 class="site-section-title">Bukan sekadar slide. Ini adalah lingkungan belajar yang dapat di-scroll.</h2><p class="site-lead">Arah visual tetap mengikuti navigasi ungu gelap dan struktur tiga bagian Beranda / Lihat Detail / Simulasi dari desain sebelumnya, tetapi setiap halaman kini memanjang secara vertikal dengan teori, interaksi, dan penjelasan tanpa dibatasi ukuran satu slide presentasi.</p><a class="site-btn secondary" href="detail.html" style="margin-top:18px">Buka halaman teori lengkap</a></div>
+<div class="feature-list"><div class="feature-item reveal"><div class="feature-icon">01</div><div><h3>Pahami sebelum melakukan simulasi</h3><p>Pelajari baseline fisiologis, persamaan PK/PD, dan logika pengendali sebelum mengubah parameter.</p></div></div><div class="feature-item reveal" data-delay="1"><div class="feature-icon">02</div><div><h3>Amati kondisi normal dan failure</h3><p>Bandingkan normal pemberian, partial pemberian, occlusion, dan over-pemberian dengan mekanisme aktuator yang tetap terlihat.</p></div></div><div class="feature-item reveal" data-delay="2"><div class="feature-icon">03</div><div><h3>Hubungkan angka dengan animasi</h3><p>Halaman simulasi menghubungkan HR, Ees, CO, dan exposure obat dengan grafik serta visualisasi kardiovaskular 3D yang dianimasikan.</p></div></div></div>
+</div></section>
+<section class="site-section compact"><div class="site-wrap"><div class="grid-3"><article class="glass-card reveal"><span class="card-index">01</span><h3>Lihat Detail</h3><p>Ikuti alur dobutamine dari infus hingga konsentrasi plasma, paparan ternormalisasi, ventricular-arterial coupling, dan persamaan output.</p><a class="site-btn secondary" href="detail.html" style="margin-top:20px">Baca teori</a></article><article class="glass-card reveal" data-delay="1"><span class="card-index">02</span><h3>Jalankan Simulasi</h3><p>Ubah target CO, parameter PID, batas dosis, kecepatan simulasi, dan kondisi pump sambil mengamati hemodinamika secara real time.</p><a class="site-btn primary" href="simulation.html#simulator" style="margin-top:20px">Buka simulator</a></article><article class="glass-card reveal" data-delay="2"><span class="card-index">03</span><h3>Demonstrasikan Failure</h3><p>Tunjukkan perbedaan antara dosis perintah dan dosis aktual, lalu ikuti dampaknya melalui Cp, z, hingga cardiac output.</p><a class="site-btn secondary" href="simulation.html#failure-guide" style="margin-top:20px">Lihat panduan demo</a></article></div></div></section>
+<section class="site-section compact"><div class="site-wrap"><div class="reveal"><div class="site-kicker">Tim proyek</div><h2 class="site-section-title">Teknik Biomedis · Universitas Gadjah Mada</h2><p class="site-lead">Versi web ini mempertahankan identitas konsep presentasi sebelumnya, tetapi mengubahnya menjadi website simulator yang responsif.</p></div><div class="grid-2" style="margin-top:28px"><article class="glass-card reveal"><h3>Tim</h3><p>Riris Windu Larasati · Mutiara Depuspa · Hanan Zhafirah Atsir · Farida Yeni Asih</p></article><article class="glass-card reveal" data-delay="1"><h3>Unit akademik</h3><p>Program Studi Teknik Biomedis · Departemen Teknik Elektro dan Teknologi Informasi · Fakultas Teknik · Universitas Gadjah Mada</p></article></div></div></section>
+</main><footer class="site-footer">
+  <div class="site-wrap">
+    <div class="site-footer-grid">
+      <div>
+        <a class="footer-brand" href="index.html">
+          <img
+            src="assets/logobcs.png"
+            alt="Biomedical Cardiovascular Simulator"
+            class="footer-logo"
+          >
+        </a>
+        <p>
+          Simulator sistem kontrol edukasional untuk HFrEF + infus dobutamine.
+          Bukan kalkulator dosis klinis maupun rekomendasi terapi.
+        </p>
+      </div>
+
+      <div class="site-footer-links">
+        <a href="detail.html">Teori</a>
+        <a href="simulation.html">Simulasi</a>
+        <a href="detail.html#references">Referensi</a>
+      </div>
+    </div>
+
+    <div class="site-copyright">
+      Teknik Biomedis · Universitas Gadjah Mada · Website tiga halaman berbasis scroll
+    </div>
+  </div>
+</footer></body></html>

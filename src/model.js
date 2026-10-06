@@ -112,10 +112,26 @@ export function linearizedPlant() {
   return { A, B, C, D: Dm, kCO, dcGain };
 }
 
+export function normalizeFailure(failure = 'normal') {
+  const key = String(failure ?? 'normal')
+    .trim()
+    .toLowerCase()
+    .replace(/[\s_-]+/g, '');
+
+  if (key === 'partial' || key === 'partialdelivery') return 'partial';
+  if (key === 'occlusion' || key === 'nodelivery') return 'occlusion';
+  if (key === 'overdelivery' || key === 'overdose') return 'overdelivery';
+
+  return 'normal';
+}
+
 export function deliveryFactor(failure = 'normal') {
-  if (failure === 'partial') return 0.50;
-  if (failure === 'occlusion') return 0.00;
-  if (failure === 'overdelivery') return PARAMS.overDeliveryFactor;
+  const mode = normalizeFailure(failure);
+
+  if (mode === 'partial') return 0.50;
+  if (mode === 'occlusion') return 0.00;
+  if (mode === 'overdelivery') return PARAMS.overDeliveryFactor;
+
   return 1.00;
 }
 
@@ -143,11 +159,14 @@ export class DobutamineCardioSim {
     this.last.Cp = 0;
     this.last.error = 0;
     this.last.alpha = 1;
+    this.last.uTarget = 0;
+    this.last.failure = 'normal';
     this.last.saturated = false;
   }
 
   step(dt, cfg) {
-    const alpha = deliveryFactor(cfg.failure);
+    const failure = normalizeFailure(cfg.failure);
+    const alpha = deliveryFactor(failure);
 
     const minDose = Math.max(0, Math.min(cfg.minDose, cfg.maxDose));
     const maxDose = Math.max(minDose, cfg.maxDose);
@@ -199,6 +218,8 @@ export class DobutamineCardioSim {
     this.last.Cp = this.Cp;
     this.last.error = error;
     this.last.alpha = alpha;
+    this.last.uTarget = uTarget;
+    this.last.failure = failure;
     this.last.saturated =
       uCommand >= maxDose - 1e-3 ||
       uCommand <= minDose + 1e-3;

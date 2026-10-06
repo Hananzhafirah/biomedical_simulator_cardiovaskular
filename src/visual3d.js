@@ -246,7 +246,7 @@ export class Cardio3D {
       new GLTFLoader();
 
     loader.load(
-      "assets/heart.glb",
+      "./assets/heart.glb",
 
       (gltf) => {
         this.heart =

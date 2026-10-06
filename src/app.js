@@ -5,6 +5,7 @@ import {
   heartFromExposure,
   steadyStateAtDose,
   deliveryFactor,
+  normalizeFailure,
   linearizedPlant
 } from './model.js';
 
@@ -63,7 +64,7 @@ function cfg() {
     Kd: +$('kd').value,
     minDose: +$('minDose').value,
     maxDose: +$('maxDose').value,
-    failure: $('failureMode').value
+    failure: normalizeFailure($('failureMode').value)
   };
 }
 
@@ -99,7 +100,7 @@ function syncLabels() {
 
   $('modeHelp').innerHTML = pidMode
     ? '<strong>PID closed-loop:</strong> pengendali otomatis mengubah dosis perintah untuk memperkecil error CO. Output selalu dibatasi oleh minimum dan maximum dose.'
-    : '<strong>Manual open-loop:</strong> dosis ditentukan langsung oleh pengguna. Mode ini dipakai sebagai pembanding untuk mengevaluasi manfaat feedback PID; Kp, Ki, Kd, dan target CO tidak mengendalikan pump.';
+    : '<strong>Manual open-loop:</strong> dosis ditentukan langsung oleh pengguna. Pada over-delivery 150%, target dosis aktual = 1.5 × dosis perintah; dosis aktual mencapainya secara bertahap sesuai dinamika pump.';
 }
 
 function sendTo3D(o) {
@@ -144,9 +145,15 @@ function updateMetrics(o) {
 
   } else if (c.failure === 'overdelivery') {
     const factor = alphaFromFailure(c.failure);
+    const deliveryTarget = Number.isFinite(o.uTarget)
+      ? o.uTarget
+      : factor * o.uCommand;
+
     alarm.textContent =
-      `Failure over-delivery: pump menargetkan ${(factor * 100).toFixed(0)}% dosis perintah. ` +
-      `Exposure z saat ini ${(o.zRaw ?? o.z).toFixed(2)} (z = 1.00 adalah exposure referensi, bukan ambang toksisitas).`;
+      `Failure over-delivery ${(factor * 100).toFixed(0)}%: ` +
+      `dosis perintah ${o.uCommand.toFixed(2)} → target delivery ${deliveryTarget.toFixed(2)} µg/kg/min; ` +
+      `dosis aktual ${o.uActual.toFixed(2)} µg/kg/min. ` +
+      `Exposure z ${(o.zRaw ?? o.z).toFixed(2)}.`;
     alarm.classList.add('danger');
 
   } else if ((o.zRaw ?? o.z) > 1.0) {
